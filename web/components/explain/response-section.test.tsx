@@ -36,7 +36,8 @@ describe("ResponseSection", () => {
       { input: EXAMPLE_INPUT, feature: "MedInc" },
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
-    expect(screen.getByRole("figure", { name: /median household income varies/ })).toBeInTheDocument();
+    // The chart is loaded on demand, so it appears a moment after the legend.
+    expect(await screen.findByRole("figure", { name: /median household income varies/ })).toBeInTheDocument();
   });
 
   test("says it shows model behaviour, not cause and effect", async () => {

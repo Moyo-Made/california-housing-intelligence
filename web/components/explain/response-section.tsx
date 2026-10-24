@@ -1,6 +1,7 @@
 "use client";
 
 import { RotateCw } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,7 +13,17 @@ import { FEATURE_NAMES, FEATURES, type FeatureName } from "@/lib/housing/feature
 import { formatUsd } from "@/lib/housing/format";
 import type { HousingInput } from "@/lib/housing/types";
 import { cn } from "@/lib/utils";
-import { ResponseChart } from "./response-chart";
+
+/** Same height as the chart, so swapping one for the other doesn't shift the page. */
+function ChartPlaceholder() {
+  return <div aria-hidden className="h-64 animate-pulse rounded-md bg-muted sm:h-80" />;
+}
+
+// Recharts is only downloaded once there is a curve to draw, not with the page.
+const ResponseChart = dynamic(() => import("./response-chart").then((mod) => mod.ResponseChart), {
+  ssr: false,
+  loading: ChartPlaceholder,
+});
 
 const DEFAULT_FEATURE: FeatureName = "MedInc";
 
@@ -96,7 +107,7 @@ export function ResponseSection({ input }: { input: HousingInput | null }) {
         </div>
       ) : (
         status === "loading" && (
-          <div aria-hidden className="h-64 animate-pulse rounded-md bg-muted sm:h-80" />
+          <ChartPlaceholder />
         )
       )}
 
