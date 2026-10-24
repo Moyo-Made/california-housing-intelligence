@@ -15,6 +15,11 @@ Loads `housing_model.joblib` and serves predictions.
 It returns `{"predicted_value_usd": 430217.29}`: the model output (units of $100,000)
 converted to US dollars and rounded to cents. Invalid input returns FastAPI's standard 422.
 
+- `POST /predict/batch` takes `{"inputs": [ ... ]}` with 1 to 100 inputs in the same shape
+  and returns `{"predicted_values_usd": [ ... ]}` in the same order. Each estimate equals
+  what `/predict` returns for that input. The web app's model-response chart uses it, so
+  the model runs once per chart instead of once per point.
+
 ## Setup
 
 The model is not in git. The API loads a compressed copy of the notebook's model, made

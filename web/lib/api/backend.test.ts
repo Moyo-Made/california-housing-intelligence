@@ -6,7 +6,7 @@ import {
   hangingFetch,
   jsonResponse,
 } from "@/test/fixtures";
-import { predictFromBackend } from "./backend";
+import { predictBatchFromBackend, predictFromBackend } from "./backend";
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -109,5 +109,40 @@ describe("predictFromBackend", () => {
     controller.abort();
 
     await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+  });
+});
+
+describe("predictBatchFromBackend", () => {
+  const second = { ...EXAMPLE_INPUT, HouseAge: 10 };
+
+  test("posts all inputs to /predict/batch and returns estimates in order", async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ predicted_values_usd: [430217.29, 401000] }));
+
+    const result = await predictBatchFromBackend([EXAMPLE_INPUT, second]);
+
+    expect(result).toEqual({ ok: true, data: [430217.29, 401000] });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("http://backend.test/predict/batch");
+    expect(JSON.parse(init?.body as string)).toEqual({ inputs: [EXAMPLE_INPUT, second] });
+  });
+
+  test.each([
+    ["the wrong number of estimates", { predicted_values_usd: [1] }],
+    ["a non-numeric estimate", { predicted_values_usd: [1, "2"] }],
+    ["a missing list", { predicted_value_usd: 1 }],
+  ])("rejects %s as a bad response", async (_, body) => {
+    fetchMock.mockResolvedValue(jsonResponse(body));
+    const result = await predictBatchFromBackend([EXAMPLE_INPUT, second]);
+    expect(!result.ok && result.error.kind).toBe("bad_response");
+  });
+
+  test("reports an API validation error without per-field messages", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ detail: [{ loc: ["body", "inputs", 0, "MedInc"], msg: "Input should be greater than 0" }] }, 422),
+    );
+    expect(await predictBatchFromBackend([EXAMPLE_INPUT])).toEqual({
+      ok: false,
+      error: { kind: "validation", message: "Some inputs are missing or invalid.", fields: {} },
+    });
   });
 });

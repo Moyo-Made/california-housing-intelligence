@@ -40,3 +40,23 @@ def predict(data: HousingInput):
     return {
         "predicted_value_usd": round(float(prediction) * 100_000, 2)
     }
+
+
+class BatchInput(BaseModel):
+    inputs: list[HousingInput] = Field(min_length=1, max_length=100)
+
+
+@app.post("/predict/batch")
+def predict_batch(data: BatchInput):
+    features = pd.DataFrame(
+        [item.model_dump() for item in data.inputs],
+        columns=list(model.feature_names_in_)
+    )
+
+    predictions = model.predict(features)
+
+    return {
+        "predicted_values_usd": [
+            round(float(prediction) * 100_000, 2) for prediction in predictions
+        ]
+    }

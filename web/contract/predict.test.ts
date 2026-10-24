@@ -3,7 +3,7 @@
 // Then: npm run test:contract  (BACKEND_URL defaults to http://127.0.0.1:8000)
 import { beforeAll, describe, expect, test } from "vitest";
 import { POST } from "@/app/api/predict/route";
-import { predictFromBackend } from "@/lib/api/backend";
+import { MAX_BATCH_SIZE, predictBatchFromBackend, predictFromBackend } from "@/lib/api/backend";
 import { FEATURE_NAMES, FEATURES } from "@/lib/housing/features";
 import { EXAMPLE_INPUT, EXAMPLE_PREDICTION_USD } from "@/test/fixtures";
 
@@ -107,5 +107,30 @@ describe("POST /api/sweep (through the real API)", () => {
       expect(point.predicted_value_usd).toBeGreaterThanOrEqual(14_999);
       expect(point.predicted_value_usd).toBeLessThanOrEqual(500_001);
     }
-  }, 30_000); // about 32 API calls over the network
+  }, 30_000); // allows for a cold start over the network
+});
+
+describe("POST /predict/batch", () => {
+  test("gives the same estimates as one-at-a-time /predict, in order", async () => {
+    const inputs = [EXAMPLE_INPUT, { ...EXAMPLE_INPUT, HouseAge: 10 }, { ...EXAMPLE_INPUT, MedInc: 2 }];
+    const batch = await predictBatchFromBackend(inputs);
+    const singles = await Promise.all(inputs.map((input) => predictFromBackend(input)));
+
+    expect(batch.ok).toBe(true);
+    expect(batch.ok && batch.data).toEqual(singles.map((s) => s.ok && s.data.predicted_value_usd));
+    expect(batch.ok && batch.data[0]).toBe(EXAMPLE_PREDICTION_USD);
+  });
+
+  test("accepts up to MAX_BATCH_SIZE inputs and rejects more", async () => {
+    const full = await predictBatchFromBackend(Array(MAX_BATCH_SIZE).fill(EXAMPLE_INPUT));
+    const over = await predictBatchFromBackend(Array(MAX_BATCH_SIZE + 1).fill(EXAMPLE_INPUT));
+
+    expect(full.ok && full.data).toHaveLength(MAX_BATCH_SIZE);
+    expect(!over.ok && over.error.kind).toBe("validation");
+  });
+
+  test("is listed in the API schema", async () => {
+    const paths = Object.keys((await (await fetch(`${baseUrl}/openapi.json`)).json()).paths);
+    expect(paths).toEqual(expect.arrayContaining(["/predict", "/predict/batch"]));
+  });
 });
