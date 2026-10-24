@@ -1,0 +1,8 @@
+# Local environment and tooling: not needed by the deployed function.
+.venv
+__pycache__
+compress_model.py
+
+# Only the compressed model is deployed (same trees, 33 MB instead of 145 MB).
+housing_model.uncompressed.joblib
+!housing_model.joblib

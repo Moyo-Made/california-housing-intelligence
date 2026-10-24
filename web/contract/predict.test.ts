@@ -107,5 +107,5 @@ describe("POST /api/sweep (through the real API)", () => {
       expect(point.predicted_value_usd).toBeGreaterThanOrEqual(14_999);
       expect(point.predicted_value_usd).toBeLessThanOrEqual(500_001);
     }
-  });
+  }, 30_000); // about 32 API calls over the network
 });

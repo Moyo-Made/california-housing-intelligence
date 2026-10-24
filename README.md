@@ -15,3 +15,11 @@ geographic area rather than a house, and the target is capped at $500,000.
 
 Each folder's README covers setup. All environments are pinned, and the training run has
 been reproduced byte-for-byte (see `notebook/README.md`).
+
+## Live
+
+- App: https://california-housing-intelligence.vercel.app
+- API: https://california-housing-api.vercel.app (`POST /predict`)
+
+Both run on Vercel as separate projects. The app's server calls the API using the
+`BACKEND_URL` environment variable; the browser never calls the API directly.

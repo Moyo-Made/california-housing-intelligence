@@ -1,0 +1,7 @@
+# Local-only files: build output, test reports, and local environment settings.
+.next
+test-results
+playwright-report
+blob-report
+.env*.local
+.env.local
