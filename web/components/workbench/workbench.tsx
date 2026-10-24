@@ -8,9 +8,11 @@ import { PredictionCard } from "@/components/result/prediction-card";
 import { Button } from "@/components/ui/button";
 import type { FeatureName } from "@/lib/housing/features";
 import { DEFAULT_PRESET_ID } from "@/lib/housing/presets";
+import { toDraft } from "./drafts";
 import { FeatureField } from "./feature-field";
 import { FieldMessage } from "./field-message";
 import { FIELD_GROUPS } from "./fields";
+import { LocationPicker } from "./location-picker";
 import { ModelInputs } from "./model-inputs";
 import { PresetMenu } from "./preset-menu";
 import { ProvenanceBadge } from "./provenance-badge";
@@ -34,10 +36,17 @@ export function Workbench() {
     });
   }
 
+  function moveLocation(latitude: number, longitude: number) {
+    dispatch({ type: "edit", name: "Latitude", draft: toDraft("Latitude", latitude) });
+    dispatch({ type: "edit", name: "Longitude", draft: toDraft("Longitude", longitude) });
+  }
+
   const fieldNotices = new Map<FeatureName, "atypical" | "beyond-training">();
   let bedroomsExceedRooms = false;
+  let outsideCalifornia = false;
   for (const notice of scenario.notices) {
     if (notice.kind === "bedrooms-exceed-rooms") bedroomsExceedRooms = true;
+    else if (notice.kind === "outside-california") outsideCalifornia = true;
     else fieldNotices.set(notice.feature, notice.kind);
   }
 
@@ -78,6 +87,14 @@ export function Workbench() {
               <legend className="mb-4 w-full border-b border-border pb-2 font-heading text-lg font-medium">
                 {group.title}
               </legend>
+              {group.id === "location" && (
+                <LocationPicker
+                  latitude={scenario.values.Latitude}
+                  longitude={scenario.values.Longitude}
+                  isOutside={outsideCalifornia}
+                  onMove={moveLocation}
+                />
+              )}
               {group.features.map((name) => (
                 <FeatureField
                   key={name}
@@ -88,6 +105,13 @@ export function Workbench() {
                   onDraftChange={(draft) => dispatch({ type: "edit", name, draft })}
                 />
               ))}
+              {group.id === "location" && outsideCalifornia && (
+                <FieldMessage tone="notice">
+                  This point is outside California or offshore, where the training data
+                  has no areas. The model still returns a number, but it has nothing
+                  comparable to base it on.
+                </FieldMessage>
+              )}
               {group.id === "housing" && bedroomsExceedRooms && (
                 <FieldMessage tone="notice">
                   Average bedrooms is higher than average rooms. That never happens

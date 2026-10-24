@@ -107,3 +107,22 @@ describe("assessInput", () => {
     });
   });
 });
+
+describe("assessInput location", () => {
+  test("flags a point outside California", () => {
+    expect(assessInput({ ...EXAMPLE_INPUT, Latitude: 36.17, Longitude: -115.14 })).toContainEqual({
+      kind: "outside-california",
+    });
+  });
+
+  test("doesn't flag a real coastal record that sits just offshore", () => {
+    // A training location in Monterey Bay, about 10 km off the simplified coast.
+    expect(assessInput({ ...EXAMPLE_INPUT, Latitude: 36.87, Longitude: -122.05 })).not.toContainEqual({
+      kind: "outside-california",
+    });
+  });
+
+  test("needs both coordinates", () => {
+    expect(assessInput({ Latitude: 36.17 })).toEqual([]);
+  });
+});

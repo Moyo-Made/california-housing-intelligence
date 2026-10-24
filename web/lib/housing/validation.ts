@@ -1,3 +1,4 @@
+import { isInCalifornia } from "@/lib/geo/california";
 import { FEATURE_NAMES, FEATURES, type FeatureName } from "./features";
 import type { FieldErrors, HousingInput } from "./types";
 
@@ -67,7 +68,8 @@ function checkValue(name: FeatureName, value: unknown): string | undefined {
 export type Notice =
   | { kind: "atypical"; feature: FeatureName }
   | { kind: "beyond-training"; feature: FeatureName }
-  | { kind: "bedrooms-exceed-rooms" };
+  | { kind: "bedrooms-exceed-rooms" }
+  | { kind: "outside-california" };
 
 /** Accepts a partial input so valid fields still get notices while others are being fixed. */
 export function assessInput(input: Partial<HousingInput>): Notice[] {
@@ -87,6 +89,11 @@ export function assessInput(input: Partial<HousingInput>): Notice[] {
   const { AveBedrms, AveRooms } = input;
   if (AveBedrms !== undefined && AveRooms !== undefined && AveBedrms > AveRooms) {
     notices.push({ kind: "bedrooms-exceed-rooms" });
+  }
+
+  const { Latitude, Longitude } = input;
+  if (Latitude !== undefined && Longitude !== undefined && !isInCalifornia(Latitude, Longitude)) {
+    notices.push({ kind: "outside-california" });
   }
   return notices;
 }

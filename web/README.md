@@ -50,3 +50,12 @@ The route handler (`app/api/predict/route.ts`):
 
 Feature names, limits and training-data ranges live in `lib/housing/features.ts`. The
 ranges come from `notebook/feature_stats.py`.
+
+## Map data
+
+`lib/geo/california-outline.json` is the California outline from the US Census Bureau's
+cartographic boundary file (2023, 1:20m, public domain), simplified to about 1 km. Rebuild it
+with `scripts/build_california_outline.py` (standard-library Python; usage is in the file).
+A point counts as outside California only beyond 10 km from the outline: every location in
+the training data is within 9.9 km, because the outline is simplified and the data rounds
+coordinates.

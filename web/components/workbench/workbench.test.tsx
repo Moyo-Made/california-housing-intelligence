@@ -198,3 +198,30 @@ describe("Workbench comparison", () => {
     expect(within(panel).getAllByRole("listitem")).toHaveLength(8);
   });
 });
+
+describe("Workbench location", () => {
+  test("places the area near a city and marks the inputs as constructed", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+
+    await user.selectOptions(screen.getByLabelText("Place near a city"), "San Diego");
+
+    expect(screen.getByRole("textbox", { name: "Latitude" })).toHaveValue("32.72");
+    expect(screen.getByRole("textbox", { name: "Longitude" })).toHaveValue("-117.16");
+    expect(screen.getByText("Constructed inputs.")).toBeInTheDocument();
+  });
+
+  test("warns when the point is outside California", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    const latitude = screen.getByRole("textbox", { name: "Latitude" });
+    const longitude = screen.getByRole("textbox", { name: "Longitude" });
+
+    await user.clear(longitude);
+    await user.type(longitude, "-115.14");
+    await user.clear(latitude);
+    await user.type(latitude, "36.17");
+
+    expect(screen.getByText(/outside California or offshore/)).toBeInTheDocument();
+  });
+});
