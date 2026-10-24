@@ -59,3 +59,9 @@ with `scripts/build_california_outline.py` (standard-library Python; usage is in
 A point counts as outside California only beyond 10 km from the outline: every location in
 the training data is within 9.9 km, because the outline is simplified and the data rounds
 coordinates.
+
+## Deployment
+
+The Vercel project `california-housing-intelligence` builds this folder (root directory
+`web/`) on every push to `main`, with `BACKEND_URL` set to the API's address. Builds are
+skipped when nothing in this folder changed (`ignoreCommand` in `vercel.json`).

@@ -23,3 +23,6 @@ been reproduced byte-for-byte (see `notebook/README.md`).
 
 Both run on Vercel as separate projects. The app's server calls the API using the
 `BACKEND_URL` environment variable; the browser never calls the API directly.
+
+Pushing to `main` deploys both projects from GitHub (root directories `api/` and `web/`).
+A project is only rebuilt when something in its own folder changed.
