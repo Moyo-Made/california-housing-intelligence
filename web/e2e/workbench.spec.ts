@@ -29,7 +29,7 @@ test("every field can be completed with the keyboard alone", async ({ page }) =>
   // Tab forward to each field in page order and type a new value.
   for (const [label, feature, typed, sent] of ENTRIES) {
     const input = page.getByRole("textbox", { name: label, exact: true });
-    for (let i = 0; i < 6 && !(await input.evaluate((el) => el === document.activeElement)); i++) {
+    for (let i = 0; i < 10 && !(await input.evaluate((el) => el === document.activeElement)); i++) {
       await page.keyboard.press("Tab");
     }
     await expect(input).toBeFocused();

@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import { predict } from "@/lib/api/client";
@@ -135,7 +135,7 @@ describe("Workbench predictions", () => {
     await user.clear(age);
     await user.type(age, "45");
 
-    expect(await screen.findByText("$301,000")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByTestId("prediction-value")).toHaveTextContent("$301,000"));
     expect(predictMock).toHaveBeenLastCalledWith(
       { ...getPreset("median").values, HouseAge: 45 },
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
@@ -164,7 +164,7 @@ describe("Workbench comparison", () => {
   test("pins an estimate and compares later edits against it", async () => {
     const user = userEvent.setup();
     render(<Workbench />);
-    await screen.findByText("$213,000");
+    await waitFor(() => expect(screen.getByTestId("prediction-value")).toHaveTextContent("$213,000"));
 
     await user.click(screen.getByRole("button", { name: "Pin as baseline" }));
     expect(screen.getByRole("button", { name: "Pin current as baseline" })).toBeDisabled();
@@ -186,7 +186,7 @@ describe("Workbench comparison", () => {
   test("keeps the baseline while another example is loaded", async () => {
     const user = userEvent.setup();
     render(<Workbench />);
-    await screen.findByText("$213,000");
+    await waitFor(() => expect(screen.getByTestId("prediction-value")).toHaveTextContent("$213,000"));
     await user.click(screen.getByRole("button", { name: "Pin as baseline" }));
 
     predictMock.mockResolvedValue({ ok: true, data: { predicted_value_usd: 430_217.29 } });
@@ -204,7 +204,8 @@ describe("Workbench location", () => {
     const user = userEvent.setup();
     render(<Workbench />);
 
-    await user.selectOptions(screen.getByLabelText("Place near a city"), "San Diego");
+    await user.click(screen.getByRole("button", { name: "Place near a city" }));
+    await user.click(await screen.findByRole("menuitem", { name: "San Diego" }));
 
     expect(screen.getByRole("textbox", { name: "Latitude" })).toHaveValue("32.72");
     expect(screen.getByRole("textbox", { name: "Longitude" })).toHaveValue("-117.16");

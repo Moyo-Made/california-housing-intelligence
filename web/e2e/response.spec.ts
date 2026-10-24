@@ -25,7 +25,8 @@ test("draws the model's response and switches the input it varies", async ({ pag
   await expect(section.locator(".recharts-line-curve")).toBeVisible();
   await expect(section.getByText("Current value: $35,348 a year")).toBeVisible();
 
-  await section.getByLabel("Input to vary").selectOption("HouseAge");
+  await section.getByRole("combobox", { name: "Input to vary" }).click();
+  await page.getByRole("option", { name: "Median house age" }).click();
   await expect(section.getByText("Current value: 29 years")).toBeVisible();
   expect(features).toEqual(["MedInc", "HouseAge"]);
 

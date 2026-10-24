@@ -14,16 +14,24 @@ type Props = {
   valueUsd: number | null;
   /** A pinned estimate to compare against, drawn as a grey marker. */
   baselineUsd?: number | null;
+  /** Fade the track and markers (not the labels) while the estimate is out of date. */
+  dimmed?: boolean;
 };
 
 /**
  * Places the estimate on the range the data can express: $0 up to the
  * $500,001 cap. Decorative; the card states the same facts in text.
  */
-export function ValueScale({ valueUsd, baselineUsd = null }: Props) {
+export function ValueScale({ valueUsd, baselineUsd = null, dimmed = false }: Props) {
   return (
     <div className="flex flex-col gap-2">
-      <div aria-hidden className="relative mt-2 h-2 rounded-full bg-muted">
+      <div
+        aria-hidden
+        className={cn(
+          "relative mt-2 h-2 rounded-full bg-muted transition-opacity duration-150",
+          dimmed && "opacity-60 delay-150",
+        )}
+      >
         {valueUsd !== null && (
           <div
             className="absolute inset-y-0 left-0 rounded-full bg-pacific/20 transition-[width] duration-200"

@@ -3,6 +3,7 @@
 import { RotateCw } from "lucide-react";
 import { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { describeValueWithUnit } from "@/components/workbench/drafts";
 import { FieldMessage } from "@/components/workbench/field-message";
 import { useDebouncedRequest } from "@/components/workbench/use-debounced-request";
@@ -37,9 +38,16 @@ export function ResponseSection({ input }: { input: HousingInput | null }) {
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-2xl">
-          <h2 id="response-title" className="font-heading text-2xl font-medium">
-            How the model responds
-          </h2>
+          <div className="flex items-baseline gap-3">
+            <h2 id="response-title" className="font-heading text-2xl font-medium">
+              How the model responds
+            </h2>
+            {shown && (status === "loading" || status === "error" || status === "blocked") && (
+              <span className="text-xs text-muted-foreground">
+                {status === "loading" ? "Updating…" : "Out of date"}
+              </span>
+            )}
+          </div>
           <p className="mt-1 text-sm text-pretty text-muted-foreground">
             The model&rsquo;s estimate as one input changes across its typical range,
             with the other seven held at their current values.
@@ -49,24 +57,24 @@ export function ResponseSection({ input }: { input: HousingInput | null }) {
           <label htmlFor={selectId} className="text-sm font-medium">
             Input to vary
           </label>
-          <select
-            id={selectId}
-            value={feature}
-            onChange={(event) => setFeature(event.target.value as FeatureName)}
-            className="h-10 rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30"
-          >
-            {FEATURE_NAMES.map((name) => (
-              <option key={name} value={name}>
-                {FEATURES[name].label}
-              </option>
-            ))}
-          </select>
+          <Select value={feature} onValueChange={(value) => setFeature(value as FeatureName)}>
+            <SelectTrigger id={selectId} className="h-10 w-full rounded-md bg-card sm:w-64">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent position="popper" align="end">
+              {FEATURE_NAMES.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {FEATURES[name].label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {status === "blocked" && (
         <FieldMessage tone="error">
-          Fix the highlighted fields to see how the model responds.
+          Once every input is valid, this shows how the model responds.
         </FieldMessage>
       )}
       {status === "error" && error && (
@@ -82,7 +90,7 @@ export function ResponseSection({ input }: { input: HousingInput | null }) {
       {shown && input ? (
         <div
           data-stale={isStale || undefined}
-          className={cn("transition-opacity duration-150", isStale && "opacity-40 delay-150")}
+          className={cn(isStale && "[&_.recharts-line-curve]:opacity-50 [&_.recharts-reference-dot]:opacity-50")}
         >
           <ResponseChart feature={feature} points={shown.points} current={input[feature]} />
         </div>

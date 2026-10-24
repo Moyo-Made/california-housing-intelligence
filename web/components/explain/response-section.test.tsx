@@ -66,7 +66,8 @@ describe("ResponseSection", () => {
     await screen.findByText("Current value: $83,252 a year");
 
     respond("HouseAge", [10, 41, 52]);
-    await user.selectOptions(screen.getByLabelText("Input to vary"), "HouseAge");
+    await user.click(screen.getByRole("combobox", { name: "Input to vary" }));
+    await user.click(await screen.findByRole("option", { name: "Median house age" }));
 
     expect(screen.queryByText("Current value: $83,252 a year")).not.toBeInTheDocument();
     expect(await screen.findByText("Current value: 41 years")).toBeInTheDocument();
@@ -86,14 +87,15 @@ describe("ResponseSection", () => {
     respond("Population", [88, 322, 50_000]);
     const user = userEvent.setup();
     render(<ResponseSection input={{ ...EXAMPLE_INPUT, Population: 50_000 }} />);
-    await user.selectOptions(screen.getByLabelText("Input to vary"), "Population");
+    await user.click(screen.getByRole("combobox", { name: "Input to vary" }));
+    await user.click(await screen.findByRole("option", { name: "Population" }));
 
     expect(await screen.findByText("Beyond every area in the training data")).toBeInTheDocument();
   });
 
   test("waits for valid inputs", () => {
     render(<ResponseSection input={null} />);
-    expect(screen.getByText("Fix the highlighted fields to see how the model responds.")).toBeInTheDocument();
+    expect(screen.getByText("Once every input is valid, this shows how the model responds.")).toBeInTheDocument();
     expect(sweepMock).not.toHaveBeenCalled();
   });
 

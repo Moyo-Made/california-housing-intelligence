@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useState } from "react";
 import type { ApiResult, PredictError } from "@/lib/housing/types";
 
 export type RequestStatus =
@@ -45,6 +45,11 @@ export function useDebouncedRequest<B, T>(
   const [slowKey, setSlowKey] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
 
+  // Requests are keyed by body, not by which function sends them. Callers'
+  // functions can change identity between renders (observed in production
+  // builds), which as an effect dependency caused a request on every render.
+  const send = useEffectEvent((payload: B, signal: AbortSignal) => request(payload, { signal }));
+
   useEffect(() => {
     if (key === null) return;
     const payload = JSON.parse(key) as B;
@@ -55,7 +60,7 @@ export function useDebouncedRequest<B, T>(
       setSlowKey(null);
       slowTimer = setTimeout(() => setSlowKey(key), slowMs);
       try {
-        const outcome = await request(payload, { signal: controller.signal });
+        const outcome = await send(payload, controller.signal);
         // The body changed while waiting; this response is out of date.
         if (controller.signal.aborted) return;
         if (outcome.ok) {
@@ -75,7 +80,7 @@ export function useDebouncedRequest<B, T>(
       clearTimeout(slowTimer);
       controller.abort();
     };
-  }, [key, attempt, debounceMs, slowMs, request]);
+  }, [key, attempt, debounceMs, slowMs]);
 
   const retry = useCallback(() => {
     setFailure(null);

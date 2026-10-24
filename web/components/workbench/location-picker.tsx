@@ -1,6 +1,14 @@
 "use client";
 
+import { ChevronDown, MapPin } from "lucide-react";
 import { useId, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { MAP_BOUNDS, MAP_SIZE, OUTLINE_PATH, project, unproject } from "@/lib/geo/california";
 import { PLACES } from "@/lib/housing/places";
 
@@ -24,7 +32,7 @@ export function LocationPicker({ latitude, longitude, isOutside, onMove }: Props
   const svgRef = useRef<SVGSVGElement>(null);
   const dragging = useRef(false);
   const hintId = useId();
-  const placeId = useId();
+  const placeHintId = useId();
   // Announced only after keyboard moves, so typing in the fields stays quiet.
   const [announcement, setAnnouncement] = useState("");
   const pin = latitude !== undefined && longitude !== undefined ? project(latitude, longitude) : null;
@@ -128,29 +136,28 @@ export function LocationPicker({ latitude, longitude, isOutside, onMove }: Props
         {announcement}
       </p>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor={placeId} className="text-sm font-medium">
-          Place near a city
-        </label>
-        <select
-          id={placeId}
-          value=""
-          onChange={(event) => {
-            const place = PLACES.find((p) => p.name === event.target.value);
-            if (place) onMove(place.latitude, place.longitude);
-          }}
-          className="h-10 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 sm:w-60"
-        >
-          <option value="" disabled>
-            Choose a city…
-          </option>
-          {PLACES.map((place) => (
-            <option key={place.name} value={place.name}>
-              {place.name}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-muted-foreground">
+      {/* An action, like "Load an example": it moves the pin and nothing stays selected. */}
+      <div className="flex flex-col items-start gap-1.5">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="lg" aria-describedby={placeHintId}>
+              <MapPin data-icon="inline-start" />
+              Place near a city
+              <ChevronDown data-icon="inline-end" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="max-h-72 w-56">
+            {PLACES.map((place) => (
+              <DropdownMenuItem
+                key={place.name}
+                onSelect={() => onMove(place.latitude, place.longitude)}
+              >
+                {place.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <p id={placeHintId} className="text-xs text-muted-foreground">
           Moves only the location to the city centre; the other inputs stay as they are.
         </p>
       </div>

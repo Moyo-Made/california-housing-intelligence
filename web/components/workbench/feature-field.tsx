@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Slider } from "@/components/ui/slider";
 import { FEATURES, type FeatureName } from "@/lib/housing/features";
 import { cn } from "@/lib/utils";
@@ -85,19 +86,19 @@ export function FeatureField({ name, draft, error, notice, onDraftChange }: Prop
             valueText={display === undefined ? undefined : displayText(name, display)}
           />
         )}
-        <div
+        {/* The units are visual; the hint below (aria-describedby) states them in words. */}
+        <InputGroup
           className={cn(
-            "flex h-10 items-center gap-1.5 rounded-md border border-input bg-card px-3 transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30",
-            showError && "border-destructive focus-within:border-destructive focus-within:ring-destructive/20",
+            "h-10 rounded-md bg-card",
             field.slider ? "w-full sm:w-44 sm:shrink-0" : "w-full sm:w-60",
           )}
         >
           {field.prefix && (
-            <span aria-hidden className="text-sm text-muted-foreground">
+            <InputGroupAddon aria-hidden className="pl-3">
               {field.prefix}
-            </span>
+            </InputGroupAddon>
           )}
-          <input
+          <InputGroupInput
             id={id}
             type="text"
             inputMode="decimal"
@@ -109,14 +110,14 @@ export function FeatureField({ name, draft, error, notice, onDraftChange }: Prop
             onKeyDown={handleKeyDown}
             aria-invalid={showError || undefined}
             aria-describedby={message ? `${hintId} ${messageId}` : hintId}
-            className="min-w-0 flex-1 bg-transparent text-base outline-none md:text-sm"
+            className={cn("h-full text-base md:text-sm", !field.prefix && "pl-3")}
           />
           {field.suffix && (
-            <span aria-hidden className="shrink-0 text-sm text-muted-foreground">
+            <InputGroupAddon align="inline-end" aria-hidden className="pr-3 font-normal">
               {field.suffix}
-            </span>
+            </InputGroupAddon>
           )}
-        </div>
+        </InputGroup>
       </div>
 
       <p id={hintId} className="text-xs text-muted-foreground">

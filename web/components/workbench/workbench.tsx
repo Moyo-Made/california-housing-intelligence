@@ -1,9 +1,10 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
-import { useMemo, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState, type RefObject } from "react";
 import type { Baseline } from "@/components/result/compare";
 import { ResponseSection } from "@/components/explain/response-section";
+import { MobileEstimateBar } from "@/components/result/mobile-estimate-bar";
 import { PredictionCard } from "@/components/result/prediction-card";
 import { Button } from "@/components/ui/button";
 import type { FeatureName } from "@/lib/housing/features";
@@ -25,6 +26,9 @@ export function Workbench() {
   const prediction = usePrediction(scenario.input);
   const isInitial = scenario.isPristine && state.presetId === DEFAULT_PRESET_ID;
   const [baseline, setBaseline] = useState<Baseline | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const inputsRef = useRef<HTMLDivElement>(null);
+  const showMobileBar = useMobileBarVisibility(inputsRef, cardRef);
 
   function pinBaseline() {
     // Only an estimate that belongs to the current inputs can be pinned.
@@ -53,7 +57,7 @@ export function Workbench() {
   return (
     <div className="flex flex-col gap-12">
       <section aria-labelledby="workbench-title" className="grid gap-10 lg:grid-cols-12 lg:gap-12">
-        <div className="flex flex-col gap-8 lg:col-span-5">
+        <div ref={inputsRef} className="flex flex-col gap-8 lg:col-span-5">
           <div className="flex flex-col gap-4">
             <div>
               <h2
@@ -81,7 +85,7 @@ export function Workbench() {
             </div>
             <ProvenanceBadge provenance={scenario.provenance} />
           </div>
-  
+
           {FIELD_GROUPS.map((group) => (
             <fieldset key={group.id} className="flex flex-col gap-6">
               <legend className="mb-4 w-full border-b border-border pb-2 font-heading text-lg font-medium">
@@ -120,10 +124,15 @@ export function Workbench() {
               )}
             </fieldset>
           ))}
+          <ModelInputs values={scenario.values} errors={scenario.errors} />
         </div>
-  
+
         <div className="lg:col-span-7">
-          <div className="flex flex-col gap-6 lg:sticky lg:top-8">
+          {/* Only the card is sticky; if it is ever taller than the screen it scrolls on its own. */}
+          <div
+            ref={cardRef}
+            className="lg:sticky lg:top-8 lg:max-h-[calc(100dvh-4rem)] lg:overflow-y-auto lg:overscroll-contain"
+          >
             <PredictionCard
               prediction={prediction}
               provenance={scenario.provenance}
@@ -134,11 +143,48 @@ export function Workbench() {
               onPin={pinBaseline}
               onClearBaseline={() => setBaseline(null)}
             />
-            <ModelInputs values={scenario.values} errors={scenario.errors} />
           </div>
         </div>
       </section>
       <ResponseSection input={scenario.input} />
+      <MobileEstimateBar
+        visible={showMobileBar}
+        prediction={prediction}
+        baseline={baseline}
+        onView={() => {
+          const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+          cardRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+        }}
+      />
     </div>
   );
+}
+
+/**
+ * On narrow screens the estimate card sits below the inputs, so a compact bar
+ * shows the estimate while the inputs are on screen and the card isn't.
+ */
+function useMobileBarVisibility(
+  inputsRef: RefObject<HTMLElement | null>,
+  cardRef: RefObject<HTMLElement | null>,
+): boolean {
+  const [inputsInView, setInputsInView] = useState(false);
+  const [cardInView, setCardInView] = useState(true);
+
+  useEffect(() => {
+    const inputs = inputsRef.current;
+    const card = cardRef.current;
+    if (!inputs || !card || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === inputs) setInputsInView(entry.isIntersecting);
+        if (entry.target === card) setCardInView(entry.isIntersecting);
+      }
+    });
+    observer.observe(inputs);
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, [inputsRef, cardRef]);
+
+  return inputsInView && !cardInView;
 }

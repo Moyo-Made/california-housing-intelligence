@@ -56,9 +56,10 @@ describe("LocationPicker", () => {
 
   test("places the pin near a chosen city", async () => {
     const { onMove } = setup();
-    await userEvent.selectOptions(screen.getByLabelText("Place near a city"), "Fresno");
+    await userEvent.click(screen.getByRole("button", { name: "Place near a city" }));
+    await userEvent.click(await screen.findByRole("menuitem", { name: "Fresno" }));
     expect(onMove).toHaveBeenCalledWith(36.74, -119.79);
-    expect(screen.getByLabelText("Place near a city")).toHaveValue("");
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
   });
 
   test("colours the pin as a notice when the point is outside California", () => {

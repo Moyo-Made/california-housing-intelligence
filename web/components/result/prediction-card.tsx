@@ -65,14 +65,13 @@ export function PredictionCard({
         </p>
       </div>
 
-      {/* An out-of-date estimate fades after a short delay, so fast updates don't flicker. */}
-      <div
-        data-stale={isStale || undefined}
-        className={cn(
-          "flex flex-col gap-5 transition-opacity duration-150",
-          isStale && "opacity-40 delay-150",
-        )}
-      >
+      {/*
+        An out-of-date estimate fades after a short delay, so fast updates don't
+        flicker. Only the number (still 4.65:1 at 60%) and the scale's graphics
+        fade; labels keep full contrast, and the "Updating…" or "Out of date"
+        label says why.
+      */}
+      <div data-stale={isStale || undefined} className="flex flex-col gap-5">
         {valueUsd === null ? (
           <div className="flex h-11 items-center sm:h-16">
             {status === "loading" ? (
@@ -84,12 +83,19 @@ export function PredictionCard({
         ) : (
           <p
             data-testid="prediction-value"
-            className="text-[2.75rem] leading-none font-semibold tracking-tight sm:text-display"
+            className={cn(
+              "text-[2.75rem] leading-none font-semibold tracking-tight transition-opacity duration-150 sm:text-display",
+              isStale && "opacity-60 delay-150",
+            )}
           >
             {formatUsd(valueUsd, DISPLAY_STEP_USD)}
           </p>
         )}
-        <ValueScale valueUsd={valueUsd} baselineUsd={baseline?.valueUsd ?? null} />
+        <ValueScale
+          valueUsd={valueUsd}
+          baselineUsd={baseline?.valueUsd ?? null}
+          dimmed={isStale}
+        />
       </div>
 
       {status === "error" && error && (

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from "next/font/google";
 import "./globals.css";
 
@@ -19,10 +19,21 @@ const newsreader = Newsreader({
   axes: ["opsz"],
 });
 
+const title = "California Housing Intelligence";
+const description =
+  "An educational machine-learning explorer. A Random Forest trained on 1990 California census block groups estimates an area's median home value. Not a property valuation tool.";
+
 export const metadata: Metadata = {
-  title: "California Housing Intelligence",
-  description:
-    "An educational machine-learning explorer. A Random Forest trained on 1990 California census block groups estimates an area's median home value. Not a property valuation tool.",
+  // Absolute URLs for the share image; set SITE_URL in production.
+  metadataBase: process.env.SITE_URL ? new URL(process.env.SITE_URL) : undefined,
+  title,
+  description,
+  openGraph: { title, description, type: "website" },
+  twitter: { card: "summary_large_image", title, description },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#f7f7f4",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

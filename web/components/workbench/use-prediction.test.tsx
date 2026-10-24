@@ -140,3 +140,20 @@ describe("usePrediction", () => {
     expect(result.current.isSlow).toBe(true);
   });
 });
+
+describe("usePrediction request identity", () => {
+  test("a new request function on every render doesn't trigger new requests", async () => {
+    predictMock.mockResolvedValue(ok(1));
+    const { rerender } = renderHook(
+      // A fresh function each render, as production builds were seen to produce.
+      ({ input }) => usePrediction(input, { predict: (body, options) => predictMock(body, options) }),
+      { initialProps: { input: A } },
+    );
+    await wait(250);
+    rerender({ input: A });
+    rerender({ input: { ...A } });
+    await wait(1_000);
+
+    expect(predictMock).toHaveBeenCalledTimes(1);
+  });
+});

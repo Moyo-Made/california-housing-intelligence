@@ -190,6 +190,7 @@ describe("PredictionCard", () => {
     renderCard({ status: "loading", isStale: true });
     expect(screen.getByText("Updating…")).toBeInTheDocument();
     expect(screen.getByTestId("prediction-value").parentElement).toHaveAttribute("data-stale");
+    expect(screen.getByTestId("prediction-value")).toHaveClass("opacity-60");
   });
 
   test("explains a slow response", () => {
