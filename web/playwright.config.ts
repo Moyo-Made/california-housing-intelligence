@@ -21,5 +21,9 @@ export default defineConfig({
     url: `http://127.0.0.1:${PORT}`,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
+    // Point the app at a closed port so tests never depend on a locally running
+    // API: browser tests mock /api/predict and /api/sweep themselves, and
+    // `npm run test:contract` covers the real API.
+    env: { BACKEND_URL: "http://127.0.0.1:9" },
   },
 });

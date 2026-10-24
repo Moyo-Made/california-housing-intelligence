@@ -64,7 +64,8 @@ test("recovers from an outage with Try again", async ({ page }) => {
   );
 
   await page.goto("/");
-  const retry = page.getByRole("button", { name: "Try again" });
+  const card = page.getByRole("region", { name: "Predicted median home value" });
+  const retry = card.getByRole("button", { name: "Try again" });
   await expect(retry).toBeVisible();
   await expect(page.getByTestId("prediction-value")).toHaveCount(0);
 
