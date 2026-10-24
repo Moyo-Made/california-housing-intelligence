@@ -1,8 +1,18 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
+import { predict } from "@/lib/api/client";
 import { FEATURE_NAMES, FEATURES } from "@/lib/housing/features";
+import { getPreset } from "@/lib/housing/presets";
 import { Workbench } from "./workbench";
+
+vi.mock("@/lib/api/client", () => ({ predict: vi.fn() }));
+const predictMock = vi.mocked(predict);
+
+beforeEach(() => {
+  predictMock.mockReset();
+  predictMock.mockResolvedValue({ ok: true, data: { predicted_value_usd: 213_456.78 } });
+});
 
 function sentValue(name: string) {
   const panel = screen.getByRole("region", { name: "What the model receives" });
@@ -103,5 +113,49 @@ describe("Workbench", () => {
     const dialog = await screen.findByRole("dialog");
     expect(dialog).toHaveTextContent(/52 years or more were all recorded as 52/);
     expect(dialog).toHaveTextContent("HouseAge");
+  });
+});
+
+describe("Workbench predictions", () => {
+  test("asks the model for the starting profile and shows the estimate", async () => {
+    render(<Workbench />);
+
+    expect(await screen.findByTestId("prediction-value")).toHaveTextContent("$213,000");
+    expect(predictMock).toHaveBeenCalledTimes(1);
+    expect(predictMock.mock.calls[0][0]).toEqual(getPreset("median").values);
+  });
+
+  test("asks again with the edited inputs", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    await screen.findByTestId("prediction-value");
+    predictMock.mockResolvedValue({ ok: true, data: { predicted_value_usd: 301_000 } });
+
+    const age = screen.getByRole("textbox", { name: "Median house age" });
+    await user.clear(age);
+    await user.type(age, "45");
+
+    expect(await screen.findByText("$301,000")).toBeInTheDocument();
+    expect(predictMock).toHaveBeenLastCalledWith(
+      { ...getPreset("median").values, HouseAge: 45 },
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+  });
+
+  test("stops asking while a field is invalid", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    await screen.findByTestId("prediction-value");
+    const callsBefore = predictMock.mock.calls.length;
+
+    const latitude = screen.getByRole("textbox", { name: "Latitude" });
+    await user.clear(latitude);
+    await user.type(latitude, "99");
+    await user.tab();
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    expect(predictMock).toHaveBeenCalledTimes(callsBefore);
+    expect(screen.getByText("Fix the highlighted field to update the estimate.")).toBeInTheDocument();
+    expect(screen.getByText("Out of date")).toBeInTheDocument();
   });
 });

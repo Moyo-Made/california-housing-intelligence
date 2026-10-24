@@ -39,7 +39,7 @@ test("every field can be completed with the keyboard alone", async ({ page }) =>
     await expect(panel.locator(`dt:text-is("${feature}") + dd`)).toHaveText(sent);
   }
 
-  await expect(page.getByText("Constructed inputs.")).toBeVisible();
+  await expect(page.getByText("Constructed inputs.", { exact: true })).toBeVisible();
   await expect(page.getByRole("status")).toHaveText("All eight values are valid.");
 });
 

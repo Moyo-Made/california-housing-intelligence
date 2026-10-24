@@ -8,14 +8,17 @@ import { DEFAULT_PRESET_ID } from "@/lib/housing/presets";
 import { FeatureField } from "./feature-field";
 import { FieldMessage } from "./field-message";
 import { FIELD_GROUPS } from "./fields";
+import { PredictionCard } from "@/components/result/prediction-card";
 import { ModelInputs } from "./model-inputs";
 import { PresetMenu } from "./preset-menu";
 import { ProvenanceBadge } from "./provenance-badge";
 import { deriveScenario, initialScenario, scenarioReducer } from "./scenario";
+import { usePrediction } from "./use-prediction";
 
 export function Workbench() {
   const [state, dispatch] = useReducer(scenarioReducer, DEFAULT_PRESET_ID, initialScenario);
   const scenario = useMemo(() => deriveScenario(state), [state]);
+  const prediction = usePrediction(scenario.input);
   const isInitial = scenario.isPristine && state.presetId === DEFAULT_PRESET_ID;
 
   const fieldNotices = new Map<FeatureName, "atypical" | "beyond-training">();
@@ -82,7 +85,13 @@ export function Workbench() {
       </div>
 
       <div className="lg:col-span-7">
-        <div className="lg:sticky lg:top-8">
+        <div className="flex flex-col gap-6 lg:sticky lg:top-8">
+          <PredictionCard
+            prediction={prediction}
+            provenance={scenario.provenance}
+            hasInputNotices={scenario.notices.length > 0}
+            invalidCount={Object.keys(scenario.errors).length}
+          />
           <ModelInputs values={scenario.values} errors={scenario.errors} />
         </div>
       </div>
