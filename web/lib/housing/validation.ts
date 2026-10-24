@@ -69,12 +69,14 @@ export type Notice =
   | { kind: "beyond-training"; feature: FeatureName }
   | { kind: "bedrooms-exceed-rooms" };
 
-export function assessInput(input: HousingInput): Notice[] {
+/** Accepts a partial input so valid fields still get notices while others are being fixed. */
+export function assessInput(input: Partial<HousingInput>): Notice[] {
   const notices: Notice[] = [];
 
   for (const name of FEATURE_NAMES) {
     const { stats } = FEATURES[name];
     const value = input[name];
+    if (value === undefined) continue;
     if (value < stats.min || value > stats.max) {
       notices.push({ kind: "beyond-training", feature: name });
     } else if (value < stats.p1 || value > stats.p99) {
@@ -82,7 +84,8 @@ export function assessInput(input: HousingInput): Notice[] {
     }
   }
 
-  if (input.AveBedrms > input.AveRooms) {
+  const { AveBedrms, AveRooms } = input;
+  if (AveBedrms !== undefined && AveRooms !== undefined && AveBedrms > AveRooms) {
     notices.push({ kind: "bedrooms-exceed-rooms" });
   }
   return notices;
