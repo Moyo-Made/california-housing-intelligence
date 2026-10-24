@@ -25,6 +25,15 @@ python3.13 -m venv .venv
 Choose the `.venv` kernel. Running the notebook writes `housing_model.joblib` next to it.
 Model files are gitignored.
 
+## Feature statistics
+
+`feature_stats.py` prints each feature's min, 1st percentile, median, 99th percentile and
+max as JSON. The web app's input ranges (`web/lib/housing/features.ts`) are copied from it.
+
+```bash
+.venv/bin/python feature_stats.py
+```
+
 ## Reproducibility check (2026-10-24)
 
 The notebook was re-executed headlessly in a fresh environment built from these files:
@@ -57,5 +66,5 @@ Limitations to keep in mind when quoting these numbers:
   training and test sets, so the test MAE is likely optimistic for unfamiliar areas.
 - The test set was evaluated several times during development, so it is not a strictly
   untouched final check.
-- The target is capped at 5.00001 ($500,001) for 992 rows. `MedInc` is capped at 15 and
+- The target is capped: 965 rows are recorded at exactly 5.00001 ($500,001), the cap value. `MedInc` is capped at 15 and
   `HouseAge` at 52.
