@@ -7,8 +7,10 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 
-# Model artifacts are large (145 MB) and are tracked by checksum, not in git
+# Model files stay out of git (the notebook's output is 145 MB), except the
+# compressed copy the API deploys from (33 MB; see api/README.md).
 *.joblib
+!api/housing_model.joblib
 
 # Environment files (only the example is committed)
 .env*

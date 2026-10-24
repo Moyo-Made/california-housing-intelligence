@@ -22,8 +22,9 @@ converted to US dollars and rounded to cents. Invalid input returns FastAPI's st
 
 ## Setup
 
-The model is not in git. The API loads a compressed copy of the notebook's model, made
-with `compress_model.py` (same trees, 33 MB instead of 145 MB):
+The API loads `housing_model.joblib`, a compressed copy of the notebook's model made with
+`compress_model.py` (same trees, 33 MB instead of 145 MB). That compressed file is committed
+so Vercel can build from Git; the uncompressed original stays out of git. To regenerate it:
 
 ```bash
 # The notebook's output, renamed:
@@ -70,8 +71,10 @@ Deployed on Vercel as its own project (`california-housing-api`), at
 https://california-housing-api.vercel.app. Vercel builds the FastAPI app from `main.py`
 with Python 3.13 (`.python-version`) and `requirements.txt`; `vercel.json` sets the
 framework. `.vercelignore` uploads the compressed model and leaves out the virtual
-environment and the uncompressed model. Deploy from this folder with
-`vercel deploy --prod`.
+environment and the uncompressed model.
+
+Pushing to `main` deploys automatically: the Vercel project's root directory is `api/`, and
+`ignoreCommand` skips the build when nothing in this folder changed.
 
 ## Model compression
 
