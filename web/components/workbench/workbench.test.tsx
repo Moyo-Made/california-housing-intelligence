@@ -159,3 +159,42 @@ describe("Workbench predictions", () => {
     expect(screen.getByText("Out of date")).toBeInTheDocument();
   });
 });
+
+describe("Workbench comparison", () => {
+  test("pins an estimate and compares later edits against it", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    await screen.findByText("$213,000");
+
+    await user.click(screen.getByRole("button", { name: "Pin as baseline" }));
+    expect(screen.getByRole("button", { name: "Pin current as baseline" })).toBeDisabled();
+
+    predictMock.mockResolvedValue({ ok: true, data: { predicted_value_usd: 258_900 } });
+    const age = screen.getByRole("textbox", { name: "Median house age" });
+    await user.clear(age);
+    await user.type(age, "45");
+
+    const panel = await screen.findByRole("region", { name: "Compared with your baseline" });
+    expect(await within(panel).findByText(/estimate is \$46,000 higher than for the baseline/)).toBeInTheDocument();
+    expect(panel).toHaveTextContent("the synthetic median profile$213,000");
+    expect(within(panel).getByRole("listitem")).toHaveTextContent("Median house age29 years →changed to 45 years");
+
+    await user.click(within(panel).getByRole("button", { name: "Clear baseline" }));
+    expect(screen.queryByRole("region", { name: "Compared with your baseline" })).not.toBeInTheDocument();
+  });
+
+  test("keeps the baseline while another example is loaded", async () => {
+    const user = userEvent.setup();
+    render(<Workbench />);
+    await screen.findByText("$213,000");
+    await user.click(screen.getByRole("button", { name: "Pin as baseline" }));
+
+    predictMock.mockResolvedValue({ ok: true, data: { predicted_value_usd: 430_217.29 } });
+    await user.click(screen.getByRole("button", { name: "Load an example" }));
+    await user.click(await screen.findByRole("menuitem", { name: /Berkeley hills/ }));
+
+    const panel = screen.getByRole("region", { name: "Compared with your baseline" });
+    expect(await within(panel).findByText(/\$217,000 higher/)).toBeInTheDocument();
+    expect(within(panel).getAllByRole("listitem")).toHaveLength(8);
+  });
+});

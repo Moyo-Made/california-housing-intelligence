@@ -1,14 +1,31 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test, vi } from "vitest";
 import type { Prediction } from "@/components/workbench/use-prediction";
 import { failure } from "@/lib/api/errors";
 import type { Provenance } from "@/lib/housing/presets";
+import type { HousingInput } from "@/lib/housing/types";
+import { EXAMPLE_INPUT } from "@/test/fixtures";
+import type { Baseline } from "./compare";
 import { PredictionCard } from "./prediction-card";
+
+type CardOptions = {
+  provenance?: Provenance;
+  hasInputNotices?: boolean;
+  invalidCount?: number;
+  currentValues?: Partial<HousingInput>;
+  baseline?: Baseline | null;
+};
 
 function renderCard(
   prediction: Partial<Prediction>,
-  { provenance = { kind: "synthetic" } as Provenance, hasInputNotices = false, invalidCount = 0 } = {},
+  {
+    provenance = { kind: "synthetic" },
+    hasInputNotices = false,
+    invalidCount = 0,
+    currentValues = EXAMPLE_INPUT,
+    baseline = null,
+  }: CardOptions = {},
 ) {
   const full: Prediction = {
     status: "success",
@@ -19,16 +36,108 @@ function renderCard(
     retry: vi.fn(),
     ...prediction,
   };
+  const onPin = vi.fn();
+  const onClearBaseline = vi.fn();
   render(
     <PredictionCard
       prediction={full}
       provenance={provenance}
       hasInputNotices={hasInputNotices}
       invalidCount={invalidCount}
+      currentValues={currentValues}
+      baseline={baseline}
+      onPin={onPin}
+      onClearBaseline={onClearBaseline}
     />,
   );
-  return full;
+  return { ...full, onPin, onClearBaseline };
 }
+
+const BASELINE: Baseline = {
+  input: EXAMPLE_INPUT,
+  valueUsd: 430_217.29,
+  provenance: { kind: "record", row: 0, place: "Berkeley hills" },
+};
+
+describe("PredictionCard comparison", () => {
+  test("offers to pin a current estimate", async () => {
+    const { onPin } = renderCard({});
+    await userEvent.click(screen.getByRole("button", { name: "Pin as baseline" }));
+    expect(onPin).toHaveBeenCalledOnce();
+  });
+
+  test.each([
+    ["loading", { status: "loading", isStale: true }],
+    ["out of date", { status: "error", isStale: true, error: failure("unavailable").error }],
+    ["blocked", { status: "blocked", isStale: true }],
+  ] as const)("can't pin while the estimate is %s", (_, prediction) => {
+    renderCard(prediction);
+    expect(screen.getByRole("button", { name: "Pin as baseline" })).toBeDisabled();
+  });
+
+  test("can't re-pin inputs that already are the baseline", () => {
+    renderCard({}, { baseline: BASELINE });
+    expect(screen.getByRole("button", { name: "Pin current as baseline" })).toBeDisabled();
+    expect(screen.getByText("the same inputs")).toBeInTheDocument();
+  });
+
+  test("compares the current estimate with the baseline", () => {
+    renderCard(
+      { valueUsd: 476_123.45 },
+      { baseline: BASELINE, currentValues: { ...EXAMPLE_INPUT, MedInc: 12, HouseAge: 20 } },
+    );
+    const panel = screen.getByRole("region", { name: "Compared with your baseline" });
+
+    expect(panel).toHaveTextContent("the real 1990 record in row 0 (Berkeley hills)$430,000");
+    expect(panel).toHaveTextContent("2 inputs changed$476,000");
+    expect(within(panel).getByText(/estimate is \$46,000 higher than for the baseline/)).toBeInTheDocument();
+    const items = within(panel).getAllByRole("listitem").map((item) => item.textContent);
+    expect(items).toEqual([
+      "Median household income$83,252 a year →changed to $120,000 a year",
+      "Median house age41 years →changed to 20 years",
+    ]);
+    expect(panel).toHaveTextContent("not that the changed inputs cause the difference");
+  });
+
+  test("says lower when the estimate falls, and announces the difference", () => {
+    renderCard({ valueUsd: 401_000 }, { baseline: BASELINE, currentValues: { ...EXAMPLE_INPUT, HouseAge: 10 } });
+    const panel = screen.getByRole("region", { name: "Compared with your baseline" });
+    expect(within(panel).getByText(/estimate is \$29,000 lower than for the baseline/)).toBeInTheDocument();
+    expect(
+      screen.getByText("Estimated median home value: $401,000. The model’s estimate is $29,000 lower than for the baseline."),
+    ).toBeInTheDocument();
+  });
+
+  test("doesn't compare against an estimate that is out of date", () => {
+    renderCard(
+      { status: "loading", isStale: true },
+      { baseline: BASELINE, currentValues: { ...EXAMPLE_INPUT, HouseAge: 10 } },
+    );
+    const panel = screen.getByRole("region", { name: "Compared with your baseline" });
+    expect(panel).toHaveTextContent("Waiting for the current estimate…");
+    expect(panel).not.toHaveTextContent(/higher|lower/);
+  });
+
+  test("shows an invalid current value in the changed list", () => {
+    const withoutLatitude: Partial<HousingInput> = { ...EXAMPLE_INPUT };
+    delete withoutLatitude.Latitude;
+    renderCard({ status: "blocked", isStale: true }, { baseline: BASELINE, currentValues: withoutLatitude });
+    const panel = screen.getByRole("region", { name: "Compared with your baseline" });
+    expect(within(panel).getByRole("listitem")).toHaveTextContent("Latitude37.88°N →changed to invalid");
+  });
+
+  test("clears the baseline", async () => {
+    const { onClearBaseline } = renderCard({}, { baseline: BASELINE, currentValues: { ...EXAMPLE_INPUT, HouseAge: 10 } });
+    await userEvent.click(screen.getByRole("button", { name: "Clear baseline" }));
+    expect(onClearBaseline).toHaveBeenCalledOnce();
+  });
+
+  test("draws the baseline on the scale with a legend", () => {
+    renderCard({}, { baseline: BASELINE, currentValues: { ...EXAMPLE_INPUT, HouseAge: 10 } });
+    expect(screen.getByTestId("scale-baseline")).toBeInTheDocument();
+    expect(screen.getByText("Current estimate")).toBeInTheDocument();
+  });
+});
 
 describe("PredictionCard", () => {
   test("shows the estimate rounded to $1,000 with honest context", () => {

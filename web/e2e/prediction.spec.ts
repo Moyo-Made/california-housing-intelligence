@@ -73,3 +73,24 @@ test("recovers from an outage with Try again", async ({ page }) => {
   await expect(page.getByTestId("prediction-value")).toHaveText("$213,000");
   await expect(retry).toHaveCount(0);
 });
+
+test("pins a baseline and compares a changed scenario against it", async ({ page }) => {
+  await page.route("**/api/predict", async (route) => {
+    const { HouseAge } = route.request().postDataJSON();
+    await json(route, { predicted_value_usd: HouseAge === 45 ? 258_900 : 213_456.78 });
+  });
+
+  await page.goto("/");
+  await expect(page.getByTestId("prediction-value")).toHaveText("$213,000");
+  await page.getByRole("button", { name: "Pin as baseline" }).click();
+
+  await page.getByRole("textbox", { name: "Median house age" }).fill("45");
+
+  const panel = page.getByRole("region", { name: "Compared with your baseline" });
+  await expect(panel.getByText(/estimate is \$46,000 higher than for the baseline/)).toBeVisible();
+  await expect(panel.getByRole("listitem")).toHaveText(/Median house age\s*29 years\s*→\s*changed to 45 years/);
+  await expect(page.getByTestId("scale-baseline")).toBeVisible();
+
+  await panel.getByRole("button", { name: "Clear baseline" }).click();
+  await expect(panel).toHaveCount(0);
+});

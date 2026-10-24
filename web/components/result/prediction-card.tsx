@@ -1,11 +1,15 @@
-import { RotateCw } from "lucide-react";
+import { Pin, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FieldMessage } from "@/components/workbench/field-message";
 import type { Prediction } from "@/components/workbench/use-prediction";
 import { formatUsd } from "@/lib/housing/format";
 import { MODEL_FACTS } from "@/lib/housing/model-facts";
 import type { Provenance } from "@/lib/housing/presets";
+import type { HousingInput } from "@/lib/housing/types";
 import { cn } from "@/lib/utils";
+import { changedInputs, displayedDifference, DISPLAY_STEP_USD, type Baseline } from "./compare";
+import { ComparisonPanel, differenceSentence } from "./comparison-panel";
+import { describeProvenance } from "./describe-provenance";
 import { ValueScale } from "./value-scale";
 
 /** Estimates at or above this are close enough to the cap to say so. */
@@ -18,6 +22,11 @@ type Props = {
   hasInputNotices: boolean;
   /** Number of fields that currently fail validation. */
   invalidCount: number;
+  /** Current valid values in model units, compared against the baseline. */
+  currentValues: Partial<HousingInput>;
+  baseline: Baseline | null;
+  onPin: () => void;
+  onClearBaseline: () => void;
 };
 
 export function PredictionCard({
@@ -25,9 +34,15 @@ export function PredictionCard({
   provenance,
   hasInputNotices,
   invalidCount,
+  currentValues,
+  baseline,
+  onPin,
+  onClearBaseline,
 }: Props) {
   const { status, valueUsd, isStale, error, isSlow, retry } = prediction;
   const isCurrent = status === "success";
+  const matchesBaseline =
+    baseline !== null && changedInputs(baseline.input, currentValues).length === 0;
 
   return (
     <section
@@ -71,10 +86,10 @@ export function PredictionCard({
             data-testid="prediction-value"
             className="text-[2.75rem] leading-none font-semibold tracking-tight sm:text-display"
           >
-            {formatUsd(valueUsd, 1_000)}
+            {formatUsd(valueUsd, DISPLAY_STEP_USD)}
           </p>
         )}
-        <ValueScale valueUsd={valueUsd} />
+        <ValueScale valueUsd={valueUsd} baselineUsd={baseline?.valueUsd ?? null} />
       </div>
 
       {status === "error" && error && (
@@ -110,6 +125,26 @@ export function PredictionCard({
         </FieldMessage>
       )}
 
+      {baseline && (
+        <ComparisonPanel
+          baseline={baseline}
+          prediction={prediction}
+          currentValues={currentValues}
+          onClear={onClearBaseline}
+        />
+      )}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <Button variant="outline" onClick={onPin} disabled={!isCurrent || matchesBaseline}>
+          <Pin data-icon="inline-start" />
+          {baseline ? "Pin current as baseline" : "Pin as baseline"}
+        </Button>
+        {!baseline && (
+          <p className="text-xs text-muted-foreground">
+            Pin this estimate, then change inputs to compare.
+          </p>
+        )}
+      </div>
+
       <p className="border-t border-border pt-4 text-sm text-pretty text-muted-foreground">
         On {MODEL_FACTS.dataset.testRows.toLocaleString("en-US")} areas it never saw
         during training, the model&rsquo;s estimates were off by{" "}
@@ -143,8 +178,13 @@ export function PredictionCard({
       )}
 
       <p aria-live="polite" className="sr-only">
-        {status === "success" && valueUsd !== null
-          ? `Estimated median home value: ${formatUsd(valueUsd, 1_000)}.`
+        {isCurrent && valueUsd !== null
+          ? [
+              `Estimated median home value: ${formatUsd(valueUsd, DISPLAY_STEP_USD)}.`,
+              baseline && !matchesBaseline
+                ? differenceSentence(displayedDifference(valueUsd, baseline.valueUsd)).replace(/^[▲▼] /, "")
+                : "",
+            ].join(" ").trim()
           : status === "error" && error
             ? error.message
             : ""}
@@ -167,15 +207,4 @@ function StatusLabel({ prediction }: { prediction: Prediction }) {
         : null;
 
   return label ? <span className="text-xs text-muted-foreground">{label}</span> : null;
-}
-
-function describeProvenance(provenance: Provenance) {
-  switch (provenance.kind) {
-    case "synthetic":
-      return "the synthetic median profile";
-    case "record":
-      return `the real 1990 record in row ${provenance.row.toLocaleString("en-US")} (${provenance.place})`;
-    case "constructed":
-      return "your constructed inputs";
-  }
 }

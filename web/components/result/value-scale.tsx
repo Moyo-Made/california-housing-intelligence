@@ -10,11 +10,17 @@ function percent(usd: number) {
   return `${Math.min(1, Math.max(0, usd / CAP)) * 100}%`;
 }
 
+type Props = {
+  valueUsd: number | null;
+  /** A pinned estimate to compare against, drawn as a grey marker. */
+  baselineUsd?: number | null;
+};
+
 /**
  * Places the estimate on the range the data can express: $0 up to the
  * $500,001 cap. Decorative; the card states the same facts in text.
  */
-export function ValueScale({ valueUsd }: { valueUsd: number | null }) {
+export function ValueScale({ valueUsd, baselineUsd = null }: Props) {
   return (
     <div className="flex flex-col gap-2">
       <div aria-hidden className="relative mt-2 h-2 rounded-full bg-muted">
@@ -28,6 +34,13 @@ export function ValueScale({ valueUsd }: { valueUsd: number | null }) {
           className="absolute -top-1 h-4 w-px bg-foreground/50"
           style={{ left: percent(MEDIAN) }}
         />
+        {baselineUsd !== null && (
+          <div
+            data-testid="scale-baseline"
+            className="absolute top-1/2 size-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-card bg-baseline"
+            style={{ left: percent(baselineUsd) }}
+          />
+        )}
         {valueUsd !== null && (
           <div
             data-testid="scale-marker"
@@ -52,10 +65,24 @@ export function ValueScale({ valueUsd }: { valueUsd: number | null }) {
           </span>
         ))}
       </div>
-      <p className="flex items-center gap-2 text-xs text-muted-foreground">
-        <span aria-hidden className="inline-block h-3 w-px bg-foreground/50" />
-        Median of all training areas: {formatUsd(MEDIAN)}
-      </p>
+      <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        {baselineUsd !== null && (
+          <>
+            <li className="flex items-center gap-1.5">
+              <span aria-hidden className="size-2.5 rounded-full bg-pacific" />
+              Current estimate
+            </li>
+            <li className="flex items-center gap-1.5">
+              <span aria-hidden className="size-2.5 rounded-full bg-baseline" />
+              Baseline
+            </li>
+          </>
+        )}
+        <li className="flex items-center gap-2">
+          <span aria-hidden className="inline-block h-3 w-px bg-foreground/50" />
+          Median of all training areas: {formatUsd(MEDIAN)}
+        </li>
+      </ul>
     </div>
   );
 }

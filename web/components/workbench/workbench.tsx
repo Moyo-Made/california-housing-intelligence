@@ -1,14 +1,15 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
-import { useMemo, useReducer } from "react";
+import { useMemo, useReducer, useState } from "react";
+import type { Baseline } from "@/components/result/compare";
+import { PredictionCard } from "@/components/result/prediction-card";
 import { Button } from "@/components/ui/button";
 import type { FeatureName } from "@/lib/housing/features";
 import { DEFAULT_PRESET_ID } from "@/lib/housing/presets";
 import { FeatureField } from "./feature-field";
 import { FieldMessage } from "./field-message";
 import { FIELD_GROUPS } from "./fields";
-import { PredictionCard } from "@/components/result/prediction-card";
 import { ModelInputs } from "./model-inputs";
 import { PresetMenu } from "./preset-menu";
 import { ProvenanceBadge } from "./provenance-badge";
@@ -20,6 +21,17 @@ export function Workbench() {
   const scenario = useMemo(() => deriveScenario(state), [state]);
   const prediction = usePrediction(scenario.input);
   const isInitial = scenario.isPristine && state.presetId === DEFAULT_PRESET_ID;
+  const [baseline, setBaseline] = useState<Baseline | null>(null);
+
+  function pinBaseline() {
+    // Only an estimate that belongs to the current inputs can be pinned.
+    if (prediction.status !== "success" || !scenario.input || prediction.valueUsd === null) return;
+    setBaseline({
+      input: scenario.input,
+      valueUsd: prediction.valueUsd,
+      provenance: scenario.provenance,
+    });
+  }
 
   const fieldNotices = new Map<FeatureName, "atypical" | "beyond-training">();
   let bedroomsExceedRooms = false;
@@ -91,6 +103,10 @@ export function Workbench() {
             provenance={scenario.provenance}
             hasInputNotices={scenario.notices.length > 0}
             invalidCount={Object.keys(scenario.errors).length}
+            currentValues={scenario.values}
+            baseline={baseline}
+            onPin={pinBaseline}
+            onClearBaseline={() => setBaseline(null)}
           />
           <ModelInputs values={scenario.values} errors={scenario.errors} />
         </div>
