@@ -9,3 +9,11 @@ test("home page renders the product framing", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByText("not a current valuation")).toBeVisible();
 });
+
+test("the header link scrolls to the method section", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Method and limits" }).click();
+
+  await expect(page).toHaveURL(/#method$/);
+  await expect(page.getByRole("heading", { level: 2, name: "Method and limits" })).toBeInViewport();
+});

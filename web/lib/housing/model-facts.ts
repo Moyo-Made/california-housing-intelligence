@@ -30,4 +30,23 @@ export const MODEL_FACTS = {
   baselinePredictionUsd: 179_850,
   /** Random Forest error on the data it was trained on. */
   trainMaeUsd: { randomForest: 12_209.52 },
+
+  /**
+   * Tree depth was compared on a validation split of the training data
+   * (13,209 / 3,303 rows). Unlimited depth was kept for the final model.
+   */
+  depthValidation: {
+    trainRows: 13_209,
+    validationRows: 3_303,
+    maeByDepthUsd: [
+      { depth: 5, maeUsd: 49_855.46 },
+      { depth: 10, maeUsd: 37_788.17 },
+      { depth: 15, maeUsd: 34_893.29 },
+      { depth: 20, maeUsd: 34_570.68 },
+      { depth: null, maeUsd: 34_475.16 },
+    ],
+  },
+
+  /** Other capped values in the data. */
+  caps: { incomeUsd: 150_001, houseAgeYears: 52 },
 } as const;

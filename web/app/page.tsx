@@ -1,4 +1,6 @@
+import { MethodSection } from "@/components/explain/method-section";
 import { Workbench } from "@/components/workbench/workbench";
+import { MODEL_FACTS } from "@/lib/housing/model-facts";
 
 export default function Home() {
   return (
@@ -12,9 +14,17 @@ export default function Home() {
               · A 1990 census model, explained
             </span>
           </p>
-          <p className="text-xs tracking-wide text-muted-foreground uppercase">
-            Educational · 1990 Census data
-          </p>
+          <nav aria-label="Page" className="flex items-baseline gap-5">
+            <span className="text-xs tracking-wide text-muted-foreground uppercase">
+              Educational · 1990 Census data
+            </span>
+            <a
+              href="#method"
+              className="text-sm underline decoration-border underline-offset-4 hover:decoration-foreground"
+            >
+              Method and limits
+            </a>
+          </nav>
         </div>
       </header>
 
@@ -31,7 +41,19 @@ export default function Home() {
           </p>
         </div>
         <Workbench />
+        <MethodSection />
       </main>
+
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-[1200px] flex-col gap-2 px-4 py-8 text-xs text-pretty text-muted-foreground sm:px-8">
+          <p>
+            Data: the California Housing dataset, built from the 1990 US Census by
+            Pace and Barry (1997) and distributed through StatLib. Model:{" "}
+            {MODEL_FACTS.model.toLowerCase()}, trained with {MODEL_FACTS.library}.
+          </p>
+          <p>An educational project. Not financial or real-estate advice.</p>
+        </div>
+      </footer>
     </>
   );
 }

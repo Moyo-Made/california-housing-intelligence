@@ -69,7 +69,7 @@ export function PredictionCard({
         ) : (
           <p
             data-testid="prediction-value"
-            className="text-[2.75rem] leading-none font-semibold tracking-tight tabular-nums sm:text-display"
+            className="text-[2.75rem] leading-none font-semibold tracking-tight sm:text-display"
           >
             {formatUsd(valueUsd, 1_000)}
           </p>
