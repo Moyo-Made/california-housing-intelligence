@@ -1,0 +1,14 @@
+# Direct dependencies of the inference API.
+# The ML stack is pinned to the exact versions the model was trained with
+# (see ../notebook/requirements.in): a joblib pickle is only reliable when
+# loaded with the same scikit-learn it was saved with.
+scikit-learn==1.9.1
+numpy==2.5.3
+pandas==3.0.6
+scipy==1.18.1
+joblib==1.6.0
+threadpoolctl==3.7.0
+
+fastapi==0.162.0
+uvicorn==0.54.0
+pydantic==2.11.7
