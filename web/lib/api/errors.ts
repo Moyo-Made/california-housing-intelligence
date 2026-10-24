@@ -1,8 +1,8 @@
 import type {
+  Failure,
   FieldErrors,
   PredictError,
   PredictErrorKind,
-  PredictResult,
 } from "@/lib/housing/types";
 
 const MESSAGES: Record<PredictErrorKind, string> = {
@@ -14,10 +14,7 @@ const MESSAGES: Record<PredictErrorKind, string> = {
     "The prediction service sent an unexpected response. Please try again.",
 };
 
-export function failure(
-  kind: PredictErrorKind,
-  fields?: FieldErrors,
-): Extract<PredictResult, { ok: false }> {
+export function failure(kind: PredictErrorKind, fields?: FieldErrors): Failure {
   const error: PredictError = { kind, message: MESSAGES[kind] };
   if (fields) error.fields = fields;
   return { ok: false, error };

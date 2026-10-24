@@ -6,7 +6,7 @@ import { FEATURE_NAMES, FEATURES } from "@/lib/housing/features";
 import { getPreset } from "@/lib/housing/presets";
 import { Workbench } from "./workbench";
 
-vi.mock("@/lib/api/client", () => ({ predict: vi.fn() }));
+vi.mock("@/lib/api/client", () => ({ predict: vi.fn(), sweep: vi.fn(() => new Promise(() => {})) }));
 const predictMock = vi.mocked(predict);
 
 beforeEach(() => {

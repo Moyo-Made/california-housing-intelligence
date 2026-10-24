@@ -1,14 +1,7 @@
 import { predictFromBackend } from "@/lib/api/backend";
 import { failure } from "@/lib/api/errors";
-import type { PredictError, PredictErrorKind } from "@/lib/housing/types";
+import { abandonedResponse, errorResponse } from "@/lib/api/http";
 import { validateInput } from "@/lib/housing/validation";
-
-const STATUS: Record<PredictErrorKind, number> = {
-  validation: 422,
-  unavailable: 503,
-  timeout: 504,
-  bad_response: 502,
-};
 
 /**
  * Same-origin proxy to the prediction API. It re-validates the input, forwards
@@ -34,12 +27,7 @@ export async function POST(request: Request) {
     });
     return result.ok ? Response.json(result.data) : errorResponse(result.error);
   } catch (error) {
-    // The browser cancelled the request, so nobody will read this response.
-    if (request.signal.aborted) return new Response(null, { status: 499 });
+    if (request.signal.aborted) return abandonedResponse();
     throw error;
   }
-}
-
-function errorResponse(error: PredictError, status = STATUS[error.kind]) {
-  return Response.json({ error }, { status });
 }

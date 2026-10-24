@@ -6,7 +6,7 @@ import {
   hangingFetch,
   jsonResponse,
 } from "@/test/fixtures";
-import { predict } from "./client";
+import { predict, sweep } from "./client";
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -69,5 +69,36 @@ describe("predict", () => {
     controller.abort();
 
     await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+  });
+});
+
+describe("sweep", () => {
+  const body = {
+    feature: "MedInc",
+    points: [
+      { value: 1, predicted_value_usd: 150_000 },
+      { value: 2, predicted_value_usd: null },
+    ],
+  };
+
+  test("posts the input and feature to the app's sweep route", async () => {
+    fetchMock.mockResolvedValue(jsonResponse(body));
+
+    const result = await sweep({ input: EXAMPLE_INPUT, feature: "MedInc" });
+
+    expect(result).toEqual({ ok: true, data: body });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/sweep");
+    expect(JSON.parse(init?.body as string)).toEqual({ input: EXAMPLE_INPUT, feature: "MedInc" });
+  });
+
+  test.each([
+    ["an unknown feature", { ...body, feature: "Rooms" }],
+    ["a non-numeric estimate", { ...body, points: [{ value: 1, predicted_value_usd: "lots" }] }],
+    ["missing points", { feature: "MedInc" }],
+  ])("rejects %s as a bad response", async (_, response) => {
+    fetchMock.mockResolvedValue(jsonResponse(response));
+    const result = await sweep({ input: EXAMPLE_INPUT, feature: "MedInc" });
+    expect(!result.ok && result.error.kind).toBe("bad_response");
   });
 });

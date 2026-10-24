@@ -3,6 +3,7 @@
 import { RotateCcw } from "lucide-react";
 import { useMemo, useReducer, useState } from "react";
 import type { Baseline } from "@/components/result/compare";
+import { ResponseSection } from "@/components/explain/response-section";
 import { PredictionCard } from "@/components/result/prediction-card";
 import { Button } from "@/components/ui/button";
 import type { FeatureName } from "@/lib/housing/features";
@@ -41,76 +42,79 @@ export function Workbench() {
   }
 
   return (
-    <section aria-labelledby="workbench-title" className="grid gap-10 lg:grid-cols-12 lg:gap-12">
-      <div className="flex flex-col gap-8 lg:col-span-5">
-        <div className="flex flex-col gap-4">
-          <div>
-            <h2
-              id="workbench-title"
-              className="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
-            >
-              Describe a block group
-            </h2>
-            <p className="mt-2 text-sm text-pretty text-muted-foreground">
-              A census block group is a small, neighbourhood-sized area, usually
-              home to 600 to 3,000 people.
-            </p>
+    <div className="flex flex-col gap-12">
+      <section aria-labelledby="workbench-title" className="grid gap-10 lg:grid-cols-12 lg:gap-12">
+        <div className="flex flex-col gap-8 lg:col-span-5">
+          <div className="flex flex-col gap-4">
+            <div>
+              <h2
+                id="workbench-title"
+                className="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+              >
+                Describe a block group
+              </h2>
+              <p className="mt-2 text-sm text-pretty text-muted-foreground">
+                A census block group is a small, neighbourhood-sized area, usually
+                home to 600 to 3,000 people.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <PresetMenu onLoad={(presetId) => dispatch({ type: "load", presetId })} />
+              <Button
+                variant="ghost"
+                size="lg"
+                disabled={isInitial}
+                onClick={() => dispatch({ type: "load", presetId: DEFAULT_PRESET_ID })}
+              >
+                <RotateCcw data-icon="inline-start" />
+                Reset
+              </Button>
+            </div>
+            <ProvenanceBadge provenance={scenario.provenance} />
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <PresetMenu onLoad={(presetId) => dispatch({ type: "load", presetId })} />
-            <Button
-              variant="ghost"
-              size="lg"
-              disabled={isInitial}
-              onClick={() => dispatch({ type: "load", presetId: DEFAULT_PRESET_ID })}
-            >
-              <RotateCcw data-icon="inline-start" />
-              Reset
-            </Button>
+  
+          {FIELD_GROUPS.map((group) => (
+            <fieldset key={group.id} className="flex flex-col gap-6">
+              <legend className="mb-4 w-full border-b border-border pb-2 font-heading text-lg font-medium">
+                {group.title}
+              </legend>
+              {group.features.map((name) => (
+                <FeatureField
+                  key={name}
+                  name={name}
+                  draft={state.drafts[name]}
+                  error={scenario.errors[name]}
+                  notice={fieldNotices.get(name)}
+                  onDraftChange={(draft) => dispatch({ type: "edit", name, draft })}
+                />
+              ))}
+              {group.id === "housing" && bedroomsExceedRooms && (
+                <FieldMessage tone="notice">
+                  Average bedrooms is higher than average rooms. That never happens
+                  in the data, so the model has nothing like it to learn from.
+                </FieldMessage>
+              )}
+            </fieldset>
+          ))}
+        </div>
+  
+        <div className="lg:col-span-7">
+          <div className="flex flex-col gap-6 lg:sticky lg:top-8">
+            <PredictionCard
+              prediction={prediction}
+              provenance={scenario.provenance}
+              hasInputNotices={scenario.notices.length > 0}
+              invalidCount={Object.keys(scenario.errors).length}
+              currentValues={scenario.values}
+              baseline={baseline}
+              onPin={pinBaseline}
+              onClearBaseline={() => setBaseline(null)}
+            />
+            <ModelInputs values={scenario.values} errors={scenario.errors} />
           </div>
-          <ProvenanceBadge provenance={scenario.provenance} />
         </div>
-
-        {FIELD_GROUPS.map((group) => (
-          <fieldset key={group.id} className="flex flex-col gap-6">
-            <legend className="mb-4 w-full border-b border-border pb-2 font-heading text-lg font-medium">
-              {group.title}
-            </legend>
-            {group.features.map((name) => (
-              <FeatureField
-                key={name}
-                name={name}
-                draft={state.drafts[name]}
-                error={scenario.errors[name]}
-                notice={fieldNotices.get(name)}
-                onDraftChange={(draft) => dispatch({ type: "edit", name, draft })}
-              />
-            ))}
-            {group.id === "housing" && bedroomsExceedRooms && (
-              <FieldMessage tone="notice">
-                Average bedrooms is higher than average rooms. That never happens
-                in the data, so the model has nothing like it to learn from.
-              </FieldMessage>
-            )}
-          </fieldset>
-        ))}
-      </div>
-
-      <div className="lg:col-span-7">
-        <div className="flex flex-col gap-6 lg:sticky lg:top-8">
-          <PredictionCard
-            prediction={prediction}
-            provenance={scenario.provenance}
-            hasInputNotices={scenario.notices.length > 0}
-            invalidCount={Object.keys(scenario.errors).length}
-            currentValues={scenario.values}
-            baseline={baseline}
-            onPin={pinBaseline}
-            onClearBaseline={() => setBaseline(null)}
-          />
-          <ModelInputs values={scenario.values} errors={scenario.errors} />
-        </div>
-      </div>
-    </section>
+      </section>
+      <ResponseSection input={scenario.input} />
+    </div>
   );
 }

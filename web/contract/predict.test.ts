@@ -88,3 +88,24 @@ describe("POST /predict", () => {
     expect(await response.json()).toEqual({ predicted_value_usd: EXAMPLE_PREDICTION_USD });
   });
 });
+
+describe("POST /api/sweep (through the real API)", () => {
+  test("passes through the current estimate and stays within the data's range", async () => {
+    const { POST: sweepRoute } = await import("@/app/api/sweep/route");
+    const response = await sweepRoute(
+      new Request("http://localhost/api/sweep", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ input: EXAMPLE_INPUT, feature: "MedInc" }),
+      }),
+    );
+    const { points } = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(points).toContainEqual({ value: EXAMPLE_INPUT.MedInc, predicted_value_usd: EXAMPLE_PREDICTION_USD });
+    for (const point of points) {
+      expect(point.predicted_value_usd).toBeGreaterThanOrEqual(14_999);
+      expect(point.predicted_value_usd).toBeLessThanOrEqual(500_001);
+    }
+  });
+});

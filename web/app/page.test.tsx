@@ -4,6 +4,7 @@ import Home from "./page";
 
 vi.mock("@/lib/api/client", () => ({
   predict: vi.fn(() => new Promise(() => {})),
+  sweep: vi.fn(() => new Promise(() => {})),
 }));
 
 test("states what the model estimates and what it is not", () => {
