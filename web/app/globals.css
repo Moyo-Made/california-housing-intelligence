@@ -1,26 +1,113 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Dark mode is not shipped yet. Scoping `dark:` to a `.dark` class (never set)
+   stops shadcn components from switching on the OS preference alone. */
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --font-sans: var(--font-plex-sans);
+  --font-mono: var(--font-plex-mono);
+  --font-heading: var(--font-newsreader);
+
+  --text-display: 4rem;
+  --text-display--line-height: 1.05;
+  --text-headline: 2.5rem;
+  --text-headline--line-height: 1.15;
+  --text-title: 1.75rem;
+  --text-title--line-height: 1.25;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-pacific: var(--pacific);
+  --color-pacific-foreground: var(--pacific-foreground);
+  --color-baseline: var(--baseline);
+  --color-notice: var(--notice);
+  --color-notice-surface: var(--notice-surface);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Contrast (WCAG): ink on canvas 16.5:1, muted 5.8:1, pacific 5.6:1,
+   notice on its surface 4.7:1, error 6.1:1, input borders 3.2:1. */
+:root {
+  --background: #f7f7f4; /* canvas: warm paper */
+  --foreground: #16181d; /* ink */
+  --card: #ffffff;
+  --card-foreground: #16181d;
+  --popover: #ffffff;
+  --popover-foreground: #16181d;
+  --primary: #16181d;
+  --primary-foreground: #ffffff;
+  --secondary: #efefea;
+  --secondary-foreground: #16181d;
+  --muted: #efefea;
+  --muted-foreground: #5b616e;
+  --accent: #efefea; /* shadcn's hover surface, not the brand accent */
+  --accent-foreground: #16181d;
+  --destructive: #b42318;
+  --border: #e3e3de; /* hairline: decorative dividers only */
+  --input: #8a8f99; /* form control borders need 3:1 */
+  --ring: #0b6e79;
+  --radius: 0.5rem;
+
+  --pacific: #0b6e79; /* reserved for the model's output */
+  --pacific-foreground: #ffffff;
+  --baseline: #8a8f99; /* pinned scenario A in comparisons */
+  --notice: #b45309;
+  --notice-surface: #fff7ed;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  input,
+  output,
+  data,
+  td,
+  th {
+    font-variant-numeric: tabular-nums;
+  }
+  ::selection {
+    background-color: color-mix(in oklab, var(--pacific) 20%, transparent);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
